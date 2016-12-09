@@ -8,15 +8,15 @@ Server-side handling of U2F registration and authentication for PHP
 
 ## Terminology
 
-**_HID_** : A USB Device
+**_HID_** : Human Interface Device, like A USB Device
 
 ## Things You Need
 
 A few **things you need** to know before working with this:
 
 1. **_A Datastore._** You need some kind of datastore for all your U2F registered users (although if you have a system with user authentication I'm presuming you've got this one sorted).
-2. **_Client-side Handling._** You need to be able to communicate with a some kind of device. I've got help for this here [in this readme](#client-side)
-3. **_A HTTPS URL._** This is very important, without HTTPS Chrome will refuse to communicate with you.
+2. **_Client-side Handling._** You need to be able to communicate with a some kind of device. I've got help for this [here](#client-side)
+3. **_A HTTPS URL._** This is very important, without HTTPS Chrome will refuse to communicate with you. [See here](#https-and-ssl)
 
 ### Client-side (The magic JavaScript Bit of talking with a USB device)
 
@@ -31,11 +31,11 @@ Without a HTTPS URL your code won't work, so get one for your localhost, get one
 
 ## Process Workflow
 
-### Registration
+### Registration Process flow
 
 1. User navigates to a 2nd factor authentication page in your application.
 
-### Authentication
+### Authentication Process flow
 
 1. User navigates to their login page as they usually would, submits username and password.
 2. Server received POST request authentication data, normal username + password validation occurs
@@ -55,7 +55,7 @@ Without a HTTPS URL your code won't work, so get one for your localhost, get one
 
 ## Example Code
 
-### Registration
+### Registration Code
 
 ```php
 <?php
@@ -63,7 +63,7 @@ Without a HTTPS URL your code won't work, so get one for your localhost, get one
 
 ```
 
-### Authentication
+### Authentication Code
 
 ```php
 <?php
