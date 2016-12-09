@@ -1,0 +1,16 @@
+{
+    "name": "samyoul/u2f-php",
+    "description": "Server side handling class for U2F registration and authentication",
+    "authors": [
+        {
+            "name": "Samuel Hawksby-Robinson",
+            "email": "samuel@samyoul.com"
+        }
+    ],
+    "require": {
+        "ext-openssl":"*"
+    },
+    "autoload": {
+        "classmap": ["src/"]
+    }
+}
