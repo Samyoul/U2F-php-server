@@ -1,5 +1,5 @@
 {
-    "name": "samyoul/u2f-php",
+    "name": "samyoul/u2f-php-server",
     "description": "Server side handling class for U2F registration and authentication",
     "authors": [
         {
