@@ -4,11 +4,27 @@ Server-side handling of U2F registration and authentication for PHP
 
 ## Installation
 
-`composer require samyoul/u2f-php`
+`composer require samyoul/u2f-php-server`
 
 ## Terminology
 
-**_HID_** : Human Interface Device, like A USB Device
+**_HID_** : _Human Interface Device_, like A USB Device [like these things](https://www.google.co.uk/search?q=fido+usb+key&safe=off&tbm=isch)
+
+## Recommended Datastore Structure
+
+You don't need to follow this structure exactly, but you will need to associate your Registration data with a user. You'll also need to store the key handle, public key and the certificate, counter isn't 100% essential but it makes your application more secure.
+
+
+|Name|Type|Description|
+|---|---|---|
+|id|integer primary key||
+|user_id|integer||
+|key_handle|varchar(255)||
+|public_key|varchar(255)||
+|certificate|text||
+|counter|integer||
+
+TODO the descriptions
 
 ## Things You Need
 
