@@ -199,7 +199,7 @@ class U2F
      */
     public function makeAuthentication(array $registrations)
     {
-        $signatures = array();
+        $signatures = [];
         foreach ($registrations as $reg) {
             if( !is_object( $reg ) ) {
                 throw new \InvalidArgumentException('$registrations of getAuthenticateData() method only accepts array of object.');

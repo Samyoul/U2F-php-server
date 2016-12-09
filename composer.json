@@ -1,6 +1,6 @@
 {
     "name": "samyoul/u2f-php-server",
-    "description": "Server side handling class for U2F registration and authentication",
+    "description": "Server side handling class for FIDO U2F registration and authentication",
     "authors": [
         {
             "name": "Samuel Hawksby-Robinson",
