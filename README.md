@@ -89,7 +89,7 @@ Without a HTTPS URL your code won't work, so get one for your localhost, get one
 
 ## Licence
 
-The repository is licensed under a BSD license.
+The repository is licensed under a BSD license. [Read details here](https://github.com/Samyoul/U2F-php-server/blob/master/LICENCE.md)
 
 ## Credits
 
