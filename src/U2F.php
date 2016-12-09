@@ -79,6 +79,7 @@ class U2F
      */
     public function register(RegistrationRequest $request, $response, $includeCert = true)
     {
+        // Parameter Checks
         if( !is_object( $request ) ) {
             throw new \InvalidArgumentException('$request of register() method only accepts object.');
         }
@@ -98,49 +99,59 @@ class U2F
             throw new \InvalidArgumentException('$include_cert of register() method only accepts boolean.');
         }
 
-        $rawReg = $this->base64u_decode($response->registrationData);
-        $regData = array_values(unpack('C*', $rawReg));
+        // Unpack the registration data coming from the client-side token
+        $rawRegistration = $this->base64u_decode($response->registrationData);
+        $registrationData = array_values(unpack('C*', $rawRegistration));
         $clientData = $this->base64u_decode($response->clientData);
-        $cli = json_decode($clientData);
+        $clientToken = json_decode($clientData);
 
-        if($cli->challenge !== $request->challenge()) {
+        // Check Client's challenge matches the original request's challenge
+        if($clientToken->challenge !== $request->challenge()) {
             throw new U2FException(
                 'Registration challenge does not match',
                 U2FException::UNMATCHED_CHALLENGE
             );
         }
 
+        // Begin validating and building the registration
         $registration = new Registration();
         $offset = 1;
-        $pubKey = substr($rawReg, $offset, U2F::PUBKEY_LEN);
+        $pubKey = substr($rawRegistration, $offset, U2F::PUBKEY_LEN);
         $offset += U2F::PUBKEY_LEN;
-        // decode the pubKey to make sure it's good
-        $tmpKey = $this->pubkey_to_pem($pubKey);
-        if($tmpKey === null) {
+
+        // Validate and set the public key
+        if($this->publicKeyToPem($pubKey) === null) {
             throw new U2FException(
                 'Decoding of public key failed',
                 U2FException::PUBKEY_DECODE
             );
         }
         $registration->setPublicKey(base64_encode($pubKey));
-        $khLen = $regData[$offset++];
-        $kh = substr($rawReg, $offset, $khLen);
-        $offset += $khLen;
-        $registration->setKeyHandle($this->base64u_encode($kh));
 
-        // length of certificate is stored in byte 3 and 4 (excluding the first 4 bytes)
-        $certLen = 4;
-        $certLen += ($regData[$offset + 2] << 8);
-        $certLen += $regData[$offset + 3];
+        // Build and set the key handle.
+        $keyHandleLength = $registrationData[$offset++];
+        $keyHandle = substr($rawRegistration, $offset, $keyHandleLength);
+        $offset += $keyHandleLength;
+        $registration->setKeyHandle($this->base64u_encode($keyHandle));
 
-        $rawCert = $this->fixSignatureUnusedBits(substr($rawReg, $offset, $certLen));
-        $offset += $certLen;
+        // Build certificate
+        // Set certificate length
+        // Note: length of certificate is stored in byte 3 and 4 (excluding the first 4 bytes)
+        $certLength = 4;
+        $certLength += ($registrationData[$offset + 2] << 8);
+        $certLength += $registrationData[$offset + 3];
+
+        // Write the certificate from the returning registration data
+        $rawCert = $this->fixSignatureUnusedBits(substr($rawRegistration, $offset, $certLength));
+        $offset += $certLength;
         $pemCert  = "-----BEGIN CERTIFICATE-----\r\n";
         $pemCert .= chunk_split(base64_encode($rawCert), 64);
         $pemCert .= "-----END CERTIFICATE-----";
         if($includeCert) {
             $registration->setCertificate( base64_encode($rawCert) );
         }
+
+        // If we've set the attestDir, check the given certificate can be used.
         if($this->attestDir) {
             if(openssl_x509_checkpurpose($pemCert, -1, $this->get_certs()) !== true) {
                 throw new U2FException(
@@ -150,20 +161,25 @@ class U2F
             }
         }
 
+        // Attempt to extract public key from the certificate, if we can't something went wrong in making it.
         if(!openssl_pkey_get_public($pemCert)) {
             throw new U2FException(
                 'Decoding of public key failed',
                 U2FException::PUBKEY_DECODE
             );
         }
-        $signature = substr($rawReg, $offset);
 
+        // Generate signature from the remaining part of the raw registration data
+        $signature = substr($rawRegistration, $offset);
+
+        // Build a verification string from the components we've made in this function
         $dataToVerify  = chr(0);
         $dataToVerify .= hash('sha256', $request->appId(), true);
         $dataToVerify .= hash('sha256', $clientData, true);
-        $dataToVerify .= $kh;
+        $dataToVerify .= $keyHandle;
         $dataToVerify .= $pubKey;
 
+        // Verify our data against the signature and the certificate, on success return the registration object
         if(openssl_verify($dataToVerify, $signature, $pemCert, 'sha256') === 1) {
             return $registration;
         } else {
@@ -266,7 +282,7 @@ class U2F
                 U2FException::NO_MATCHING_REGISTRATION
             );
         }
-        $pemKey = $this->pubkey_to_pem($this->base64u_decode($reg->publicKey));
+        $pemKey = $this->publicKeyToPem($this->base64u_decode($reg->publicKey));
         if($pemKey === null) {
             throw new U2FException(
                 'Decoding of public key failed',
@@ -306,7 +322,7 @@ class U2F
      */
     private function get_certs()
     {
-        $files = array();
+        $files = [];
         $dir = $this->attestDir;
         if($dir && $handle = opendir($dir)) {
             while(false !== ($entry = readdir($handle))) {
@@ -341,7 +357,7 @@ class U2F
      * @param string $key
      * @return null|string
      */
-    private function pubkey_to_pem($key)
+    private function publicKeyToPem($key)
     {
         if(strlen($key) !== U2F::PUBKEY_LEN || $key[0] !== "\x04") {
             return null;
