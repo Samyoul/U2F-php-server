@@ -86,3 +86,11 @@ Without a HTTPS URL your code won't work, so get one for your localhost, get one
     // All the amazing authentication code
 
 ```
+
+## Licence
+
+The repository is licensed under a BSD license.
+
+## Credits
+
+This repo was originally based on the Yubico php-u2flib-server https://github.com/Yubico/php-u2flib-server
