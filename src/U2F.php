@@ -15,28 +15,20 @@ class U2F
     /** @internal */
     const PUBKEY_LEN = 65;
 
-    /** @var string  */
-    private $appId;
-
-    /** @var null|string */
-    private $attestDir;
-
     /** @internal */
-    private $FIXCERTS = array(
+    private static $FIXCERTS = [
         '349bca1031f8c82c4ceca38b9cebf1a69df9fb3b94eed99eb3fb9aa3822d26e8',
         'dd574527df608e47ae45fbba75a2afdd5c20fd94a02419381813cd55a2a3398f',
         '1d8764f0f7cd1352df6150045c8f638e517270e8b5dda1c63ade9c2280240cae',
         'd0edc9a91a1677435a953390865d208c55b3183c6759c9b5a7ff494c322558eb',
         '6073c436dcd064a48127ddbf6032ac1a66fd59a0c24434f070d4e564c124c897',
         'ca993121846c464d666096d35f13bf44c1b05af205f9b4a1e00cf6cc10c5e511'
-    );
+    ];
 
     /**
-     * @param string $appId Application id for the running application
-     * @param string|null $attestDir Directory where trusted attestation roots may be found
      * @throws U2FException If OpenSSL older than 1.0.0 is used
      */
-    public function __construct($appId, $attestDir = null)
+    public static function checkOpenSSLVersion()
     {
         if(OPENSSL_VERSION_NUMBER < 0x10000000) {
             throw new U2FException(
@@ -44,14 +36,14 @@ class U2F
                 U2FException::OLD_OPENSSL
             );
         }
-        $this->appId = $appId;
-        $this->attestDir = $attestDir;
+        return true;
     }
 
     /**
      * Called to get a registration request to send to a user.
      * Returns an array of one registration request and a array of sign requests.
      *
+     * @param string $appId Application id for the running application, Basically the app's URL
      * @param array $registrations List of current registrations for this
      * user, to prevent the user from registering the same authenticator several
      * times.
@@ -59,12 +51,11 @@ class U2F
      * RegisterRequest the second being an array of SignRequest
      * @throws U2FException
      */
-    public function makeRegistration(array $registrations = array())
+    public static function makeRegistration($appId, array $registrations = array())
     {
-        $challenge = $this->createChallenge();
-        $request = new RegistrationRequest($challenge, $this->appId);
-        $signatures = $this->makeAuthentication($registrations);
-        return array($request, $signatures);
+        $request = new RegistrationRequest(static::createChallenge(), $appId);
+        $signatures = static::makeAuthentication($registrations, $appId);
+        return [$request, $signatures];
     }
 
     /**
@@ -72,12 +63,13 @@ class U2F
      *
      * @param RegistrationRequest $request this is a reply to
      * @param object $response response from a user
+     * @param string $attestDir
      * @param bool $includeCert set to true if the attestation certificate should be
      * included in the returned Registration object
      * @return Registration
      * @throws U2FException
      */
-    public function register(RegistrationRequest $request, $response, $includeCert = true)
+    public static function register(RegistrationRequest $request, $response, $attestDir = null, $includeCert = true)
     {
         // Parameter Checks
         if( !is_object( $request ) ) {
@@ -100,9 +92,9 @@ class U2F
         }
 
         // Unpack the registration data coming from the client-side token
-        $rawRegistration = $this->base64u_decode($response->registrationData);
+        $rawRegistration = static::base64u_decode($response->registrationData);
         $registrationData = array_values(unpack('C*', $rawRegistration));
-        $clientData = $this->base64u_decode($response->clientData);
+        $clientData = static::base64u_decode($response->clientData);
         $clientToken = json_decode($clientData);
 
         // Check Client's challenge matches the original request's challenge
@@ -120,7 +112,7 @@ class U2F
         $offset += U2F::PUBKEY_LEN;
 
         // Validate and set the public key
-        if($this->publicKeyToPem($pubKey) === null) {
+        if(static::publicKeyToPem($pubKey) === null) {
             throw new U2FException(
                 'Decoding of public key failed',
                 U2FException::PUBKEY_DECODE
@@ -132,7 +124,7 @@ class U2F
         $keyHandleLength = $registrationData[$offset++];
         $keyHandle = substr($rawRegistration, $offset, $keyHandleLength);
         $offset += $keyHandleLength;
-        $registration->setKeyHandle($this->base64u_encode($keyHandle));
+        $registration->setKeyHandle(static::base64u_encode($keyHandle));
 
         // Build certificate
         // Set certificate length
@@ -142,7 +134,7 @@ class U2F
         $certLength += $registrationData[$offset + 3];
 
         // Write the certificate from the returning registration data
-        $rawCert = $this->fixSignatureUnusedBits(substr($rawRegistration, $offset, $certLength));
+        $rawCert = static::fixSignatureUnusedBits(substr($rawRegistration, $offset, $certLength));
         $offset += $certLength;
         $pemCert  = "-----BEGIN CERTIFICATE-----\r\n";
         $pemCert .= chunk_split(base64_encode($rawCert), 64);
@@ -152,8 +144,8 @@ class U2F
         }
 
         // If we've set the attestDir, check the given certificate can be used.
-        if($this->attestDir) {
-            if(openssl_x509_checkpurpose($pemCert, -1, $this->get_certs()) !== true) {
+        if($attestDir) {
+            if(openssl_x509_checkpurpose($pemCert, -1, static::get_certs($attestDir)) !== true) {
                 throw new U2FException(
                     'Attestation certificate can not be validated',
                     U2FException::ATTESTATION_VERIFICATION
@@ -194,21 +186,22 @@ class U2F
      * Called to get an authentication request.
      *
      * @param array $registrations An array of the registrations to create authentication requests for.
+     * @param string $appId Application id for the running application, Basically the app's URL
      * @return array An array of SignRequest
      * @throws \InvalidArgumentException
      */
-    public function makeAuthentication(array $registrations)
+    public static function makeAuthentication(array $registrations, $appId)
     {
         $signatures = [];
         foreach ($registrations as $reg) {
             if( !is_object( $reg ) ) {
-                throw new \InvalidArgumentException('$registrations of getAuthenticateData() method only accepts array of object.');
+                throw new \InvalidArgumentException('$registrations of makeAuthentication() method only accepts array of object.');
             }
 
             $signatures[] = new SignRequest([
-                'appId' => $this->appId,
+                'appId' => $appId,
                 'keyHandle' => $reg->keyHandle,
-                'challenge' => $this->createChallenge(),
+                'challenge' => static::createChallenge(),
             ]);
         }
         return $signatures;
@@ -218,7 +211,7 @@ class U2F
      * Called to verify an authentication response
      *
      * @param array $requests An array of outstanding authentication requests
-     * @param array $registrations An array of current registrations
+     * @param array <Registration> $registrations An array of current registrations
      * @param object $response A response from the authenticator
      * @return Registration
      * @throws U2FException
@@ -228,8 +221,9 @@ class U2F
      * If the Error returned is ERR_COUNTER_TOO_LOW this is an indication of
      * token cloning or similar and appropriate action should be taken.
      */
-    public function authenticate(array $requests, array $registrations, $response)
+    public static function authenticate(array $requests, array $registrations, $response)
     {
+        // Parameter checks
         if( !is_object( $response ) ) {
             throw new \InvalidArgumentException('$response of authenticate() method only accepts object.');
         }
@@ -241,17 +235,21 @@ class U2F
             );
         }
 
+        // Set default values to null, so we get fails by default
         /** @var object|null $req */
         $req = null;
 
         /** @var object|null $reg */
         $reg = null;
 
-        $clientData = $this->base64u_decode($response->clientData);
+        // Extract client response data
+        $clientData = static::base64u_decode($response->clientData);
         $decodedClient = json_decode($clientData);
+
+        // Check we have a match among the requests and the response
         foreach ($requests as $req) {
             if( !is_object( $req ) ) {
-                throw new \InvalidArgumentException('$requests of authenticate() method only accepts array of object.');
+                throw new \InvalidArgumentException('$requests of authenticate() method only accepts an array of objects.');
             }
 
             if($req->keyHandle === $response->keyHandle && $req->challenge === $decodedClient->challenge) {
@@ -266,9 +264,11 @@ class U2F
                 U2FException::NO_MATCHING_REQUEST
             );
         }
+
+        // Check for a match for the response among a list of registrations
         foreach ($registrations as $reg) {
             if( !is_object( $reg ) ) {
-                throw new \InvalidArgumentException('$registrations of authenticate() method only accepts array of object.');
+                throw new \InvalidArgumentException('$registrations of authenticate() method only accepts an array of objects.');
             }
 
             if($reg->keyHandle === $response->keyHandle) {
@@ -282,7 +282,9 @@ class U2F
                 U2FException::NO_MATCHING_REGISTRATION
             );
         }
-        $pemKey = $this->publicKeyToPem($this->base64u_decode($reg->publicKey));
+
+        // On Success, check we have a valid public key
+        $pemKey = static::publicKeyToPem(static::base64u_decode($reg->publicKey));
         if($pemKey === null) {
             throw new U2FException(
                 'Decoding of public key failed',
@@ -290,12 +292,14 @@ class U2F
             );
         }
 
-        $signData = $this->base64u_decode($response->signatureData);
+        // Build signature and data from response
+        $signData = static::base64u_decode($response->signatureData);
         $dataToVerify  = hash('sha256', $req->appId, true);
         $dataToVerify .= substr($signData, 0, 5);
         $dataToVerify .= hash('sha256', $clientData, true);
         $signature = substr($signData, 5);
 
+        // Verify the response data against the public key
         if(openssl_verify($dataToVerify, $signature, $pemKey, 'sha256') === 1) {
             $ctr = unpack("Nctr", substr($signData, 1, 4));
             $counter = $ctr['ctr'];
@@ -318,12 +322,13 @@ class U2F
     }
 
     /**
+     * @param string $attestDir
      * @return array
      */
-    private function get_certs()
+    private static function get_certs($attestDir)
     {
         $files = [];
-        $dir = $this->attestDir;
+        $dir = $attestDir;
         if($dir && $handle = opendir($dir)) {
             while(false !== ($entry = readdir($handle))) {
                 if(is_file("$dir/$entry")) {
@@ -339,7 +344,7 @@ class U2F
      * @param string $data
      * @return string
      */
-    private function base64u_encode($data)
+    private static function base64u_encode($data)
     {
         return trim(strtr(base64_encode($data), '+/', '-_'), '=');
     }
@@ -348,7 +353,7 @@ class U2F
      * @param string $data
      * @return string
      */
-    private function base64u_decode($data)
+    private static function base64u_decode($data)
     {
         return base64_decode(strtr($data, '-_', '+/'));
     }
@@ -357,7 +362,7 @@ class U2F
      * @param string $key
      * @return null|string
      */
-    private function publicKeyToPem($key)
+    private static function publicKeyToPem($key)
     {
         if(strlen($key) !== U2F::PUBKEY_LEN || $key[0] !== "\x04") {
             return null;
@@ -388,7 +393,7 @@ class U2F
      * @return string
      * @throws U2FException
      */
-    private function createChallenge()
+    private static function createChallenge()
     {
         $challenge = openssl_random_pseudo_bytes(32, $crypto_strong );
         if( $crypto_strong !== true ) {
@@ -398,7 +403,7 @@ class U2F
             );
         }
 
-        $challenge = $this->base64u_encode( $challenge );
+        $challenge = static::base64u_encode( $challenge );
 
         return $challenge;
     }
@@ -409,9 +414,9 @@ class U2F
      * @param string $cert
      * @return mixed
      */
-    private function fixSignatureUnusedBits($cert)
+    private static function fixSignatureUnusedBits($cert)
     {
-        if(in_array(hash('sha256', $cert), $this->FIXCERTS)) {
+        if(in_array(hash('sha256', $cert), static::$FIXCERTS)) {
             $cert[strlen($cert) - 257] = "\0";
         }
         return $cert;

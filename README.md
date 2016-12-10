@@ -1,5 +1,5 @@
 # U2F-php-server
-Server-side handling of U2F registration and authentication for PHP
+Server-side handling of FIDO U2F registration and authentication for PHP
 
 
 ## Installation
