@@ -1,10 +1,59 @@
 # U2F-php-server
-Server-side handling of FIDO U2F registration and authentication for PHP
+Server-side handling of FIDO U2F registration and authentication for PHP.
 
+Securing your online accounts and doing your bit to protect your data is extremely important and increasingly more so as hackers get more sophisticated.
+FIDO's U2F enables you to add a simple unobtrusive method of 2nd factor authentication, allowing users of your service and/or application to link a hardware key to their account.
+
+## Contents
+
+1. [Installation](#installation)
+2. [Requirements](#requirements)
+    1. [OpenSSL](#openssl)
+    1. [Clientside Magic](#client-side-the-magic-javascript-bit-of-talking-with-a-usb-device)
+    1. [HTTPS and SSL](#https-and-ssl)
+3. [Terminology](#terminology)
+4. [Recommended Datastore Structure](#recommended-datastore-structure)
+5. [Process Workflow](#process-workflow)
+    1. [Registration Process Flow](#registration-process-flow)
+    1. [Authentication Process Flow](#authentication-process-flow)
+6. [Example Code](#example-code)
+    1. [Registration Code](#registration-code)
+    1. [Authentication Code](#authentication-code)
+7. [Frameworks](#frameworks)
+    1. [Laravel](#laravel-framework)
+    1. [Yii](#yii-framework)
+    1. [CodeIgniter](#codeigniter-framework)
+8. [Licence](#licence)
+9. [Credits](#credits)
 
 ## Installation
 
 `composer require samyoul/u2f-php-server`
+
+## Requirements
+
+A few **things you need** to know before working with this:
+
+1. [**_OpenSSL_**](#openssl) 
+2. [**_A Datastore_**](#recommended-datastore-structure) You need some kind of datastore for all your U2F registered users (although if you have a system with user authentication I'm presuming you've got this one sorted).
+3. [**_Client-side Handling_**](#client-side) You need to be able to communicate with a some kind of device.
+4. [**_A HTTPS URL_**](#https-and-ssl) This is very important, without HTTPS Chrome will refuse to communicate with you.
+
+### OpenSSL
+
+... Info about installing OpenSSL ...
+
+### Client-side (The magic JavaScript Bit of talking with a USB device)
+
+My presumption is that if you are looking to add U2F authentication to a php system, then you'll probably are also looking for some client-side handling. You've got a U2F enabled USB device and you want to get the USB device speaking with the browser and then with your server running php.
+
+1. Google already have this bit sorted : https://github.com/google/u2f-ref-code/blob/master/u2f-gae-demo/war/js/u2f-api.js
+2. [Mastahyeti](https://github.com/mastahyeti) has created a repo dedicated to Google's JavaScript Client-side API : https://github.com/mastahyeti/u2f-api
+
+### HTTPS and SSL
+
+Without a HTTPS URL your code won't work, so get one for your localhost, get one for your production. https://letsencrypt.org/
+
 
 ## Terminology
 
@@ -26,32 +75,13 @@ You don't need to follow this structure exactly, but you will need to associate 
 
 TODO the descriptions
 
-## Things You Need
-
-A few **things you need** to know before working with this:
-
-1. **_A Datastore._** You need some kind of datastore for all your U2F registered users (although if you have a system with user authentication I'm presuming you've got this one sorted).
-2. **_Client-side Handling._** You need to be able to communicate with a some kind of device. I've got help for this [here](#client-side)
-3. **_A HTTPS URL._** This is very important, without HTTPS Chrome will refuse to communicate with you. [See here](#https-and-ssl)
-
-### Client-side (The magic JavaScript Bit of talking with a USB device)
-
-My presumption is that if you are looking to add U2F authentication to a php system, then you'll probably are also looking for some client-side handling. You've got a U2F enabled USB device and you want to get the USB device speaking with the browser and then with your server running php.
-
-1. Google already have this bit sorted : https://github.com/google/u2f-ref-code/blob/master/u2f-gae-demo/war/js/u2f-api.js
-2. [Mastahyeti](https://github.com/mastahyeti) has created a repo dedicated to Google's JavaScript Client-side API : https://github.com/mastahyeti/u2f-api
-
-### HTTPS and SSL
-
-Without a HTTPS URL your code won't work, so get one for your localhost, get one for your production. https://letsencrypt.org/
-
 ## Process Workflow
 
-### Registration Process flow
+### Registration Process Flow
 
 1. User navigates to a 2nd factor authentication page in your application.
 
-### Authentication Process flow
+### Authentication Process Flow
 
 1. User navigates to their login page as they usually would, submits username and password.
 2. Server received POST request authentication data, normal username + password validation occurs
@@ -71,6 +101,12 @@ Without a HTTPS URL your code won't work, so get one for your localhost, get one
 
 ## Example Code
 
+For a full working example of this repository please see [the dedicated example repository](https://github.com/Samyoul/U2F-php-server-examples)
+
+You can also install it with the following:
+
+`composer require samyoul/u2f-php-server-examples`
+
 ### Registration Code
 
 ```php
@@ -86,6 +122,36 @@ Without a HTTPS URL your code won't work, so get one for your localhost, get one
     // All the amazing authentication code
 
 ```
+
+## Frameworks
+
+### Laravel Framework
+
+See the dedicated repository : https://github.com/Samyoul/U2F-Laravel-server
+
+Installation:
+
+`composer require u2f-laravel-server`
+
+### Yii Framework
+
+See the dedicated repository : https://github.com/Samyoul/U2F-Yii-server
+
+Installation:
+
+`composer require u2f-yii-server`
+
+### CodeIgniter Framework
+
+See the dedicated repository : https://github.com/Samyoul/U2F-CodeIgniter-server
+
+Installation:
+
+`composer require u2f-codeigniter-server`
+
+### Can't see yours?
+
+**Your favourite php framework not in this list? Get coding and submit a pull request and get your framework extension included here.**
 
 ## Licence
 
