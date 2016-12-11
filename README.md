@@ -17,6 +17,7 @@ FIDO's U2F enables you to add a simple unobtrusive method of 2nd factor authenti
     1. [Registration Process Flow](#registration-process-flow)
     1. [Authentication Process Flow](#authentication-process-flow)
 6. [Example Code](#example-code)
+    1. [Compatibility Check](#compatibility-code)
     1. [Registration Code](#registration-code)
     1. [Authentication Code](#authentication-code)
 7. [Frameworks](#frameworks)
@@ -37,11 +38,11 @@ A few **things you need** to know before working with this:
 1. [**_OpenSSL_**](#openssl) 
 2. [**_A Datastore_**](#recommended-datastore-structure) You need some kind of datastore for all your U2F registered users (although if you have a system with user authentication I'm presuming you've got this one sorted).
 3. [**_Client-side Handling_**](#client-side) You need to be able to communicate with a some kind of device.
-4. [**_A HTTPS URL_**](#https-and-ssl) This is very important, without HTTPS Chrome will refuse to communicate with you.
+4. [**_A HTTPS URL_**](#https-and-ssl) This is very important, without HTTPS U2F simply will not work.
 
 ### OpenSSL
 
-... Info about installing OpenSSL ...
+This repository requires OpenSSL 1.0.0 or higher. For further details on installing OpenSSL please refer to the php manual http://php.net/manual/en/openssl.installation.php .
 
 ### Client-side (The magic JavaScript Bit of talking with a USB device)
 
@@ -52,7 +53,7 @@ My presumption is that if you are looking to add U2F authentication to a php sys
 
 ### HTTPS and SSL
 
-Without a HTTPS URL your code won't work, so get one for your localhost, get one for your production. https://letsencrypt.org/
+For U2F to work your website/service must use a HTTPS URL. Without a HTTPS URL your code won't work, so get one for your localhost, get one for your production. https://letsencrypt.org/
 
 
 ## Terminology
@@ -80,6 +81,7 @@ TODO the descriptions
 ### Registration Process Flow
 
 1. User navigates to a 2nd factor authentication page in your application.
+... TODO add the rest of the registration process flow ...
 
 ### Authentication Process Flow
 
@@ -107,15 +109,143 @@ You can also install it with the following:
 
 `composer require samyoul/u2f-php-server-examples`
 
-### Registration Code
+### Compatibility Code
+
+You'll only ever need to use this method call once per installation and only in the context of debugging if the class is giving you unexpected errors. This method call wil check your OpenSSL version and ensure it is at least 1.0.0 .
 
 ```php
 <?php
-    // All the amazing registration code
 
+require('vendor/autoload.php');
+use Samyoul\U2F;
+
+var_dump(U2F::checkOpenSSLVersion());
+```
+
+### Registration Code
+
+**Starting the registration process:**
+
+We assume that user has successfully authenticated and wishes to register.
+
+```php
+<?php
+
+require('vendor/autoload.php');
+use Samyoul\U2F;
+
+session_start();
+
+// This can be anything, but usually easier if you choose your applications domain and top level domain.
+$appId = "yourdomain.tld";
+
+// Call the makeRegistration method, passing in the app ID
+$registrationData = U2F::makeRegistration($appId);
+
+// Store the request for later
+$_SESSION['registrationRequest'] = $registrationData['request'];
+
+// Extract the request and signatures, JSON encode them so we can give the data to our javaScript magic
+$jsRequest = json_encode($registrationData['request']);
+$jsSignatures = json_encode($registrationData['signatures']);
+
+// now pass the data to a fictitious view.
+echo View::make('template/location/u2f-registration.html', compact("jsRequest", "jsSignatures"));
+```
+
+**Client-side, Talking To The USB**
+
+Non-AJAX client-side registration of U2F key token. AJAX can of course be used in your application, but it is easier to demonstrate a linear process without AJAX and callbacks. 
+
+```
+<html>
+<head>
+    <title>U2F Key Registration</title>
+</head>
+<body>
+    <h1>U2F Registration</h1>
+    <h2>Please enter your FIDO U2F device into your computer's USB port. Then confirm registration on the device.</h2>
+    
+    <div style="display:none;">
+        <form id="u2f_submission" method="post" action="auth/u2f-registration/confirm">
+            <input id="u2f_registration_response" name="registration_response" value="" />
+        </form>
+    </div>
+    
+<script type="javascript" src="https://raw.githubusercontent.com/google/u2f-ref-code/master/u2f-gae-demo/war/js/u2f-api.js"></script>
+<script>
+    setTimeout(function() {
+    
+        // A magic JS function that talks to the USB device. This function will keep polling for the USB device until it finds one.
+        u2f.register([<?php echo $jsRequest ?>], <?php echo $jsSignatures ?>], function(data) {
+           
+            // Handle returning error data
+            if(data.errorCode && errorCode != 0) {
+                alert("registration failed with error: " + data.errorCode);
+                // Or handle the error however you'd like. 
+                
+                return;
+            }
+    
+            // On success process the data from USB device to send to the server
+            var registration_response = JSON.stringify(data);
+            
+            // Get the form items so we can send data back to the server
+            var form = document.getElementById('u2f_submission');
+            var response = document.getElementById('u2f_registration_response');
+            
+            // Fill and submit form.
+            response.value = JSON.stringify(registration_response);
+            form.submit();
+        });
+    }, 1000);
+</script>
+</body>
+</html>
+```
+
+**Validation and Key Storage**
+
+This is the last stage of registration. Validate the registration response data against the original request data.
+
+```php
+<?php
+
+require('vendor/autoload.php');
+use Samyoul\U2F;
+
+session_start();
+
+// Fictitious function representing getting the authenticated user object
+$user = getAuthenticatedUser();
+
+try {
+    
+    // Validate the registration response against the registration request.
+    // The output are the credentials you need to store for U2F authentication.
+    $validatedRegistration = U2F::register(
+        $_SESSION['registrationRequest'],
+        json_decode($_POST['u2f_registration_response'])
+    );
+    
+    // Fictitious function representing the storing of the validated U2F registration data against the authenticated user. 
+    $user->storeRegistration($validatedRegistration);
+    
+    // Then let your user know what happened
+    $userMessage = "Success";
+} catch( Exception $e ) {
+    $userMessage = "We had an error: ". $e->getMessage();
+}
+
+//Fictitious view.
+echo View::make('template/location/u2f-registration-result.html', ['userMessage' => $userMessage]);
 ```
 
 ### Authentication Code
+
+**Starting the authentication process:**
+
+We assume that user has successfully authenticated and has previously registered.
 
 ```php
 <?php

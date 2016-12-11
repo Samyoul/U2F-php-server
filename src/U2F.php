@@ -55,7 +55,10 @@ class U2F
     {
         $request = new RegistrationRequest(static::createChallenge(), $appId);
         $signatures = static::makeAuthentication($registrations, $appId);
-        return [$request, $signatures];
+        return [
+            "request" => $request,
+            "signatures" => $signatures
+        ];
     }
 
     /**
