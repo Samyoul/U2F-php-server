@@ -157,7 +157,7 @@ echo View::make('template/location/u2f-registration.html', compact("jsRequest", 
 
 Non-AJAX client-side registration of U2F key token. AJAX can of course be used in your application, but it is easier to demonstrate a linear process without AJAX and callbacks. 
 
-```
+```php
 <html>
 <head>
     <title>U2F Key Registration</title>
