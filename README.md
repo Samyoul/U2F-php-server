@@ -109,6 +109,17 @@ You can also install it with the following:
 
 `composer require samyoul/u2f-php-server-examples`
 
+
+1. [Compatibility Code](#compatibility-code)
+2. [Registration Code](#registration-code)
+    1. [Step 1: Starting](#registration-step-1)
+    1. [Step 2: Talking to the HID](#registration-step-2)
+    1. [Step 3: Validation & Storage](#registration-step-3)
+3. [Authentication Code]()
+    1. [Step 1: Starting]()
+    1. [Step 2: Talking to the HID]()
+    1. [Step 3: Validation & Storage]()
+
 ### Compatibility Code
 
 You'll only ever need to use this method call once per installation and only in the context of debugging if the class is giving you unexpected errors. This method call wil check your OpenSSL version and ensure it is at least 1.0.0 .
@@ -124,6 +135,7 @@ var_dump(U2F::checkOpenSSLVersion());
 
 ### Registration Code
 
+#### Registration Step 1:
 **Starting the registration process:**
 
 We assume that user has successfully authenticated and wishes to register.
@@ -153,11 +165,12 @@ $jsSignatures = json_encode($registrationData['signatures']);
 echo View::make('template/location/u2f-registration.html', compact("jsRequest", "jsSignatures"));
 ```
 
+#### Registration Step 2:
 **Client-side, Talking To The USB**
 
 Non-AJAX client-side registration of U2F key token. AJAX can of course be used in your application, but it is easier to demonstrate a linear process without AJAX and callbacks. 
 
-```php
+```html
 <html>
 <head>
     <title>U2F Key Registration</title>
@@ -204,6 +217,7 @@ Non-AJAX client-side registration of U2F key token. AJAX can of course be used i
 </html>
 ```
 
+#### Registration Step 3:
 **Validation and Key Storage**
 
 This is the last stage of registration. Validate the registration response data against the original request data.
