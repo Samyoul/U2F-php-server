@@ -35,10 +35,10 @@ FIDO's U2F enables you to add a simple unobtrusive method of 2nd factor authenti
 
 A few **things you need** to know before working with this:
 
-1. [**_OpenSSL_**](#openssl) 
-2. [**_A Datastore_**](#recommended-datastore-structure) You need some kind of datastore for all your U2F registered users (although if you have a system with user authentication I'm presuming you've got this one sorted).
-3. [**_Client-side Handling_**](#client-side) You need to be able to communicate with a some kind of device.
-4. [**_A HTTPS URL_**](#https-and-ssl) This is very important, without HTTPS U2F simply will not work.
+1. [**_OpenSSL_**](#openssl) You need at least OpenSSL 1.0.0 or higher.
+2. [**_Client-side Handling_**](#client-side) You need to be able to communicate with a some kind of device.
+3. [**_A HTTPS URL_**](#https-and-ssl) This is very important, without HTTPS U2F simply will not work.
+4. [**_A Datastore_**](#recommended-datastore-structure) You need some kind of datastore for all your U2F registered users (although if you have a system with user authentication I'm presuming you've got this one sorted).
 
 ### OpenSSL
 
@@ -118,7 +118,7 @@ You can also install it with the following:
 3. [Authentication Code]()
     1. [Step 1: Starting]()
     1. [Step 2: Talking to the HID]()
-    1. [Step 3: Validation & Storage]()
+    1. [Step 3: Validation]()
 
 ### Compatibility Code
 
