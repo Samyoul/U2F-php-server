@@ -44,6 +44,8 @@ A few **things you need** to know before working with this:
 
 This repository requires OpenSSL 1.0.0 or higher. For further details on installing OpenSSL please refer to the php manual http://php.net/manual/en/openssl.installation.php .
 
+Also see [Compatibility Code](#compatibility-code), to check if you have the correct version of OpenSSL installed, and are unsure how else to check.
+
 ### Client-side (The magic JavaScript Bit of talking with a USB device)
 
 My presumption is that if you are looking to add U2F authentication to a php system, then you'll probably are also looking for some client-side handling. You've got a U2F enabled USB device and you want to get the USB device speaking with the browser and then with your server running php.
@@ -54,6 +56,7 @@ My presumption is that if you are looking to add U2F authentication to a php sys
 ### HTTPS and SSL
 
 For U2F to work your website/service must use a HTTPS URL. Without a HTTPS URL your code won't work, so get one for your localhost, get one for your production. https://letsencrypt.org/
+Basically encrypt everything.
 
 
 ## Terminology
@@ -122,7 +125,7 @@ You can also install it with the following:
 
 ### Compatibility Code
 
-You'll only ever need to use this method call once per installation and only in the context of debugging if the class is giving you unexpected errors. This method call wil check your OpenSSL version and ensure it is at least 1.0.0 .
+You'll only ever need to use this method call once per installation and only in the context of debugging if the class is giving you unexpected errors. This method call will check your OpenSSL version and ensure it is at least 1.0.0 .
 
 ```php
 <?php
