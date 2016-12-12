@@ -123,6 +123,8 @@ You can also install it with the following:
     1. [Step 2: Talking to the HID]()
     1. [Step 3: Validation]()
 
+---
+
 ### Compatibility Code
 
 You'll only ever need to use this method call once per installation and only in the context of debugging if the class is giving you unexpected errors. This method call will check your OpenSSL version and ensure it is at least 1.0.0 .
@@ -135,6 +137,8 @@ use Samyoul\U2F;
 
 var_dump(U2F::checkOpenSSLVersion());
 ```
+
+---
 
 ### Registration Code
 
@@ -257,6 +261,8 @@ try {
 //Fictitious view.
 echo View::make('template/location/u2f-registration-result.html', compact('userMessage'));
 ```
+
+---
 
 ### Authentication Code
 
@@ -386,6 +392,14 @@ try {
 //Fictitious view.
 echo View::make('template/location/u2f-authentication-result.html', compact('userMessage'));
 ```
+
+---
+
+Again, if you want to just download some example code to play with just install the full working code examples written for this repository please see [the dedicated example repository](https://github.com/Samyoul/U2F-php-server-examples)
+
+You can also install it with the following:
+
+`composer require samyoul/u2f-php-server-examples`
 
 ## Frameworks
 
