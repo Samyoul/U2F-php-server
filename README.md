@@ -292,10 +292,10 @@ $_SESSION['authenticationRequest'] = $authenticationRequest;
 echo View::make('template/location/u2f-authentication.html', compact("authenticationRequest"));
 ```
 
-#### Registration Step 2:
+#### Authentication Step 2:
 **Client-side, Talking To The USB**
 
-Non-AJAX client-side registration of U2F key token. AJAX can of course be used in your application, but it is easier to demonstrate a linear process without AJAX and callbacks. 
+Non-AJAX client-side authentication of U2F key token. AJAX can of course be used in your application, but it is easier to demonstrate a linear process without AJAX and callbacks. 
 
 
 ```html
