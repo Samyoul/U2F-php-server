@@ -106,7 +106,7 @@ TODO the descriptions
 
 ## Example Code
 
-For a full working example of this repository please see [the dedicated example repository](https://github.com/Samyoul/U2F-php-server-examples)
+For a full working code example for this repository please see [the dedicated example repository](https://github.com/Samyoul/U2F-php-server-examples)
 
 You can also install it with the following:
 
@@ -255,19 +255,136 @@ try {
 }
 
 //Fictitious view.
-echo View::make('template/location/u2f-registration-result.html', ['userMessage' => $userMessage]);
+echo View::make('template/location/u2f-registration-result.html', compact('userMessage'));
 ```
 
 ### Authentication Code
 
+#### Authentication Step 1:
 **Starting the authentication process:**
 
-We assume that user has successfully authenticated and has previously registered.
+We assume that user has successfully authenticated and has previously registered to use FIDO U2F.
 
 ```php
 <?php
-    // All the amazing authentication code
+    
+require('vendor/autoload.php');
+use Samyoul\U2F;
 
+session_start();
+
+// Fictitious function representing getting the authenticated user object
+$user = getAuthenticatedUser();
+
+// Fictitious function, get U2F registrations associated with the user
+$registrations = $user->U2FRegistrations();
+
+// This can be anything, but usually easier if you choose your applications domain and top level domain.
+$appId = "yourdomain.tld";
+
+// Call the U2F makeAuthentication method, passing in the user's registration(s) and the app ID
+$authenticationRequest = U2F::makeAuthentication($registrations, $appId);
+
+// Store the request for later
+$_SESSION['authenticationRequest'] = $authenticationRequest;
+
+// now pass the data to a fictitious view.
+echo View::make('template/location/u2f-authentication.html', compact("authenticationRequest"));
+```
+
+#### Registration Step 2:
+**Client-side, Talking To The USB**
+
+Non-AJAX client-side registration of U2F key token. AJAX can of course be used in your application, but it is easier to demonstrate a linear process without AJAX and callbacks. 
+
+
+```html
+<html>
+<head>
+    <title>U2F Key Authentication</title>
+</head>
+<body>
+    <h1>U2F Authentication</h1>
+    <h2>Please enter your FIDO U2F device into your computer's USB port. Then confirm authentication on the device.</h2>
+    
+    <div style="display:none;">
+        <form id="u2f_submission" method="post" action="auth/u2f-authentication/confirm">
+            <input id="u2f_authentication_response" name="authentication_response" value="" />
+        </form>
+    </div>
+
+    <script type="javascript" src="https://raw.githubusercontent.com/google/u2f-ref-code/master/u2f-gae-demo/war/js/u2f-api.js"></script>
+    <script>
+    setTimeout(function() {
+        
+        // Magic JavaScript talking to your HID
+        u2f.sign(<?php echo $authenticationRequest; ?>, function(data) {
+            
+            // Handle returning error data
+            if(data.errorCode && errorCode != 0) {
+                alert("Authentication failed with error: " + data.errorCode);
+                // Or handle the error however you'd like. 
+                
+                return;
+            }
+    
+            // On success process the data from USB device to send to the server
+            var authentication_response = JSON.stringify(data);
+            
+            // Get the form items so we can send data back to the server
+            var form = document.getElementById('u2f_submission');
+            var response = document.getElementById('u2f_authentication_response');
+            
+            // Fill and submit form.
+            response.value = JSON.stringify(authentication_response);
+            form.submit();
+        });
+    }, 1000);
+    </script>
+</body>
+</html>
+```
+
+#### Authentication Step 3:
+**Validation**
+
+This is the last stage of authentication. Validate the authentication response data against the original request data.
+
+```php
+<?php
+
+require('vendor/autoload.php');
+use Samyoul\U2F;
+
+session_start();
+
+// Fictitious function representing getting the authenticated user object
+$user = authenticatedUser();
+
+// Fictitious function, get U2F registrations associated with the user
+$registrations = $user->U2FRegistrations();
+
+try {
+    
+    // Validate the authentication response against the registration request.
+    // The output are the credentials you need to store for U2F authentication.
+    $validatedAuthentication = U2F::authenticate(
+        $_SESSION['authenticationRequest'],
+        $registrations,
+        json_decode($_POST['u2f_authentication_response'])
+    );
+    
+    // Fictitious function representing the updating of the U2F token count integer. 
+    $user->updateU2FRegistrationCount($validatedAuthentication);
+    
+    // Then let your user know what happened
+    $userMessage = "Success";
+} catch( Exception $e ) {
+    $userMessage = "We had an error: ". $e->getMessage();
+}
+
+//Fictitious view.
+echo View::make('template/location/u2f-authentication-result.html', compact('userMessage'));
 ```
 
 ## Frameworks
