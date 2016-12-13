@@ -8,7 +8,7 @@
 namespace Samyoul\U2F\U2FServer;
 
 
-class RegistrationRequest
+class RegistrationRequest implements \JsonSerializable
 {
     /** Protocol version */
     protected $version = U2FServer::VERSION;
@@ -44,9 +44,13 @@ class RegistrationRequest
         return $this->appId;
     }
 
-    public function __toString()
+    public function jsonSerialize()
     {
-        return json_encode($this);
+        return [
+            'version' => $this->version,
+            'challenge' => $this->challenge,
+            'appId' => $this->appId,
+        ];
     }
 
 }
