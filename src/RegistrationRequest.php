@@ -43,4 +43,10 @@ class RegistrationRequest
     {
         return $this->appId;
     }
+
+    public function __toString()
+    {
+        return json_encode($this);
+    }
+
 }
