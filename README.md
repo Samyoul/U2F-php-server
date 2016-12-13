@@ -110,7 +110,11 @@ For a full working code example for this repository please see [the dedicated ex
 
 You can also install it with the following:
 
-`composer require samyoul/u2f-php-server-examples`
+```bash
+$ git clone https://github.com/Samyoul/U2F-php-server-examples.git
+$ cd u2f-php-server-examples
+$ composer install 
+```
 
 
 1. [Compatibility Code](#compatibility-code)
@@ -399,7 +403,11 @@ Again, if you want to just download some example code to play with just install 
 
 You can also install it with the following:
 
-`composer require samyoul/u2f-php-server-examples`
+```bash
+$ git clone https://github.com/Samyoul/U2F-php-server-examples.git
+$ cd u2f-php-server-examples
+$ composer install 
+```
 
 ## Frameworks
 
