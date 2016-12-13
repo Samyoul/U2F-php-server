@@ -12,6 +12,6 @@
         "ext-openssl":"*"
     },
     "autoload": {
-        "classmap": ["src/"]
+        "psr-4": { "Samyoul\\U2F\\U2FServer\\": ["src/"] }
     }
 }

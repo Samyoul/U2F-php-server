@@ -5,9 +5,9 @@
  * Date: 09/12/2016
  * Time: 14:40
  */
-namespace Samyoul;
+namespace Samyoul\U2F\U2FServer;
 
-class U2F
+class U2FServer
 {
     /** Constant for the version of the u2f protocol */
     const VERSION = "U2F_V2";
@@ -111,8 +111,8 @@ class U2F
         // Begin validating and building the registration
         $registration = new Registration();
         $offset = 1;
-        $pubKey = substr($rawRegistration, $offset, U2F::PUBKEY_LEN);
-        $offset += U2F::PUBKEY_LEN;
+        $pubKey = substr($rawRegistration, $offset, static::PUBKEY_LEN);
+        $offset += static::PUBKEY_LEN;
 
         // Validate and set the public key
         if(static::publicKeyToPem($pubKey) === null) {
@@ -367,7 +367,7 @@ class U2F
      */
     private static function publicKeyToPem($key)
     {
-        if(strlen($key) !== U2F::PUBKEY_LEN || $key[0] !== "\x04") {
+        if(strlen($key) !== static::PUBKEY_LEN || $key[0] !== "\x04") {
             return null;
         }
 

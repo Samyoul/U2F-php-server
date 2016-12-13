@@ -84,25 +84,27 @@ TODO the descriptions
 ### Registration Process Flow
 
 1. User navigates to a 2nd factor authentication page in your application.
+
 ... TODO add the rest of the registration process flow ...
 
 ### Authentication Process Flow
 
 1. User navigates to their login page as they usually would, submits username and password.
-2. Server received POST request authentication data, normal username + password validation occurs
-3. On successful authentication, the application checks 2nd factor authentication is required. We're going to presume it is, otherwise the user would just be logged in at this stage.
-4. Application gets the user's registered signatures from the application datastore: `$registrations`.
-5. Application makes a `$U2F->makeAuthentication($registrations)` call, the method returns an array of `SignRequest` objects: `$signRequest`.
-6. Application JSON encodes the array and passes the data to the view
-7. When the browser loads the page the JavaScript fires the `u2f.sign(sign_requests, function(data){ // Callback logic })` function
-8. The view will use JavaScript / Browser to poll the host machine's ports for a FIDO U2F device
-9. Once the HID has been found the JavaScript / Browser will send the sign request with data.
-10. The HID will prompt the user to authorise the sign request
-11. On success the HID returns authentication data
-12. The JavaScript receives the HID's returned data and passes it to the server
-13. The application takes the returned data passes it to the `$U2F->authenticate($signRequest, $registrations, $incomingData)` method
-14. If the method returns a registration and doesn't throw an Exception, authentication is complete.
-15. Set the user's session, inform the user of the success, and redirect them.
+1. Server received POST request authentication data, normal username + password validation occurs
+1. On successful authentication, the application checks 2nd factor authentication is required. We're going to presume it is, otherwise the user would just be logged in at this stage.
+1. Application gets the user's registered signatures from the application datastore: `$registrations`.
+1. Application gets its ID, usually the domain the application is accessible from: `$appId`
+1. Application makes a `U2F::makeAuthentication($registrations, $appId)` call, the method returns an array of `SignRequest` objects: `$authenticationRequest`.
+1. Application JSON encodes the array and passes the data to the view
+1. When the browser loads the page the JavaScript fires the `u2f.sign(authenticationRequest, function(data){ // Callback logic })` function
+1. The view will use JavaScript / Browser to poll the host machine's ports for a FIDO U2F device
+1. Once the HID has been found the JavaScript / Browser will send the sign request with data.
+1. The HID will prompt the user to authorise the sign request
+1. On success the HID returns authentication data
+1. The JavaScript receives the HID's returned data and passes it to the server
+1. The application takes the returned data passes it to the `U2F::authenticate($authenticationRequest, $registrations, $authenticationResponse)` method
+1. If the method returns a registration and doesn't throw an Exception, authentication is complete.
+1. Set the user's session, inform the user of the success, and redirect them.
 
 ## Example Code
 
@@ -137,7 +139,7 @@ You'll only ever need to use this method call once per installation and only in 
 <?php
 
 require('vendor/autoload.php');
-use Samyoul\U2F;
+use Samyoul\U2F\U2FServer\U2FServer as U2F;
 
 var_dump(U2F::checkOpenSSLVersion());
 ```
@@ -155,7 +157,7 @@ We assume that user has successfully authenticated and wishes to register.
 <?php
 
 require('vendor/autoload.php');
-use Samyoul\U2F;
+use Samyoul\U2F\U2FServer\U2FServer as U2F;
 
 session_start();
 
@@ -237,7 +239,7 @@ This is the last stage of registration. Validate the registration response data 
 <?php
 
 require('vendor/autoload.php');
-use Samyoul\U2F;
+use Samyoul\U2F\U2FServer\U2FServer as U2F;
 
 session_start();
 
@@ -279,7 +281,7 @@ We assume that user has successfully authenticated and has previously registered
 <?php
     
 require('vendor/autoload.php');
-use Samyoul\U2F;
+use Samyoul\U2F\U2FServer\U2FServer as U2F;
 
 session_start();
 
@@ -364,7 +366,7 @@ This is the last stage of authentication. Validate the authentication response d
 <?php
 
 require('vendor/autoload.php');
-use Samyoul\U2F;
+use Samyoul\U2F\U2FServer\U2FServer as U2F;
 
 session_start();
 

@@ -6,13 +6,13 @@
  * Time: 15:14
  */
 
-namespace Samyoul;
+namespace Samyoul\U2F\U2FServer;
 
 
 class SignRequest
 {
     /** Protocol version */
-    protected $version = U2F::VERSION;
+    protected $version = U2FServer::VERSION;
 
     /** Authentication challenge */
     protected $challenge;

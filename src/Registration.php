@@ -6,7 +6,7 @@
  * Time: 14:59
  */
 
-namespace Samyoul;
+namespace Samyoul\U2F\U2FServer;
 
 
 class Registration

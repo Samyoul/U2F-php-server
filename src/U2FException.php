@@ -6,7 +6,7 @@
  * Time: 14:51
  */
 
-namespace Samyoul;
+namespace Samyoul\U2F\U2FServer;
 
 
 class U2FException extends \Exception
