@@ -9,7 +9,7 @@
 namespace Samyoul\U2F\U2FServer;
 
 
-class SignRequest
+class SignRequest implements \JsonSerializable
 {
     /** Protocol version */
     protected $version = U2FServer::VERSION;
@@ -60,6 +60,16 @@ class SignRequest
     public function appId()
     {
         return $this->appId;
+    }
+
+    public function jsonSerialize()
+    {
+        return [
+            'version' => $this->version,
+            'challenge' => $this->challenge,
+            'keyHandle' => $this->keyHandle,
+            'appId' => $this->appId,
+        ];
     }
 
 }

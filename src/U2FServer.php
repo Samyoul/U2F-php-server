@@ -216,7 +216,7 @@ class U2FServer
      * @param array $requests An array of outstanding authentication requests
      * @param array <Registration> $registrations An array of current registrations
      * @param object $response A response from the authenticator
-     * @return Registration
+     * @return \stdClass
      * @throws U2FException
      *
      * The Registration object returned on success contains an updated counter
@@ -255,7 +255,7 @@ class U2FServer
                 throw new \InvalidArgumentException('$requests of authenticate() method only accepts an array of objects.');
             }
 
-            if($req->keyHandle === $response->keyHandle && $req->challenge === $decodedClient->challenge) {
+            if($req->keyHandle() === $response->keyHandle && $req->challenge() === $decodedClient->challenge) {
                 break;
             }
 
@@ -297,7 +297,7 @@ class U2FServer
 
         // Build signature and data from response
         $signData = static::base64u_decode($response->signatureData);
-        $dataToVerify  = hash('sha256', $req->appId, true);
+        $dataToVerify  = hash('sha256', $req->appId(), true);
         $dataToVerify .= substr($signData, 0, 5);
         $dataToVerify .= hash('sha256', $clientData, true);
         $signature = substr($signData, 5);
