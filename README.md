@@ -1,4 +1,8 @@
 # U2F-php-server
+
+[![Latest Stable Version](https://img.shields.io/packagist/v/samyoul/u2f-php-server.svg?style=flat-square)](https://packagist.org/packages/samyoul/u2f-php-server)
+[![License](https://img.shields.io/badge/license-BSD_3_Clause-brightgreen.svg?style=flat-square)](LICENSE.md)
+
 Server-side handling of FIDO U2F registration and authentication for PHP.
 
 Securing your online accounts and doing your bit to protect your data is extremely important and increasingly more so as hackers get more sophisticated.
