@@ -1,7 +1,7 @@
 # U2F-php-server
 
 [![Latest Stable Version](https://img.shields.io/packagist/v/samyoul/u2f-php-server.svg?style=flat-square)](https://packagist.org/packages/samyoul/u2f-php-server)
-[![License](https://img.shields.io/badge/license-BSD_3_Clause-brightgreen.svg?style=flat-square)](LICENSE.md)
+[![License](https://img.shields.io/badge/license-BSD_2_Clause-brightgreen.svg?style=flat-square)](LICENCE.md)
 
 Server-side handling of FIDO U2F registration and authentication for PHP.
 
