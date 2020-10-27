@@ -1,10 +1,5 @@
 <?php
-/**
- * Created by IntelliJ IDEA.
- * User: samuel
- * Date: 09/12/2016
- * Time: 14:48
- */
+
 namespace Samyoul\U2F\U2FServer;
 
 
