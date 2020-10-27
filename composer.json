@@ -2,12 +2,17 @@
     "name": "samyoul/u2f-php-server",
     "description": "Server side handling class for FIDO U2F registration and authentication",
     "license":"BSD-2-Clause",
+    "homepage": "https://github.com/Samyoul/U2F-php-server#readme",
     "authors": [
         {
             "name": "Samuel Hawksby-Robinson",
             "email": "samuel@samyoul.com"
         }
     ],
+    "support": {
+        "issues": "https://github.com/Samyoul/U2F-php-server/issues",
+        "source": "https://github.com/Samyoul/U2F-php-server"
+    },
     "require": {
         "php": "^7.1 || ^8.0",
         "ext-openssl":"*"
