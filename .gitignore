@@ -1,4 +1,5 @@
 # IntelliJ project files
 .idea
 *.iml
+.phpunit.result.cache
 /vendor/
