@@ -46,7 +46,7 @@ class U2FServer
      * RegisterRequest the second being an array of SignRequest
      * @throws U2FException
      */
-    public static function makeRegistration($appId, array $registrations = array())
+    public static function makeRegistration($appId, array $registrations = [])
     {
         $request = new RegistrationRequest(static::createChallenge(), $appId);
         $signatures = static::makeAuthentication($registrations, $appId);
