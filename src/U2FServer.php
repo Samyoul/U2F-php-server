@@ -10,10 +10,24 @@ class U2FServer
     /** @internal */
     const PUBKEY_LEN = 65;
 
-    /** @internal */
+    /*
+     *  NOTE: If you are lucky and can match this CNs to the hashes please also add it to
+     *  the existing test case provider
+     *  "CN=Yubico U2F EE Serial 776137165",
+     *  "CN=Yubico U2F EE Serial 1086591525",
+     *  "CN=Yubico U2F EE Serial 1973679733",
+     *  "CN=Yubico U2F EE Serial 13503277888",
+     *  "CN=Yubico U2F EE Serial 14803321578"
+     */
+
+    /**
+     * @internal
+     * @see https://books.google.fr/books?id=SF68CwAAQBAJ&lpg=PT96&ots=PCLmrWyu2F&hl=fr&pg=PT96#v=onepage&q&f=false
+     * @see https://github.com/Yubico/python-u2flib-server/issues/15#issue-107916981
+     */
     private static $FIXCERTS = [
         '349bca1031f8c82c4ceca38b9cebf1a69df9fb3b94eed99eb3fb9aa3822d26e8',
-        'dd574527df608e47ae45fbba75a2afdd5c20fd94a02419381813cd55a2a3398f',
+        'dd574527df608e47ae45fbba75a2afdd5c20fd94a02419381813cd55a2a3398f', // "CN=Yubico U2F EE Serial 13831167861"
         '1d8764f0f7cd1352df6150045c8f638e517270e8b5dda1c63ade9c2280240cae',
         'd0edc9a91a1677435a953390865d208c55b3183c6759c9b5a7ff494c322558eb',
         '6073c436dcd064a48127ddbf6032ac1a66fd59a0c24434f070d4e564c124c897',
@@ -411,7 +425,7 @@ class U2FServer
      * Fixes a certificate where the signature contains unused bits.
      *
      * @param string $cert
-     * @return mixed
+     * @return string
      */
     private static function fixSignatureUnusedBits($cert)
     {
