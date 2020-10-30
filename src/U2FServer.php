@@ -39,7 +39,7 @@ class U2FServer
      * Returns an array of one registration request and a array of sign requests.
      *
      * @param string $appId Application id for the running application, Basically the app's URL
-     * @param array $registrations List of current registrations for this
+     * @param stdClass[] $registrations List of current registrations for this
      * user, to prevent the user from registering the same authenticator several
      * times.
      * @return array An array of two elements, the first containing a
@@ -183,7 +183,7 @@ class U2FServer
     /**
      * Called to get an authentication request.
      *
-     * @param array $registrations An array of the registrations to create authentication requests for.
+     * @param stdClass[] $registrations An array of the registrations to create authentication requests for.
      * @param string $appId Application id for the running application, Basically the app's URL
      * @return array An array of SignRequest
      * @throws \InvalidArgumentException
@@ -209,8 +209,8 @@ class U2FServer
     /**
      * Called to verify an authentication response
      *
-     * @param array $requests An array of outstanding authentication requests
-     * @param array <Registration> $registrations An array of current registrations
+     * @param SignRequest[] $requests An array of outstanding authentication requests
+     * @param stdClass[] $registrations An array of current registrations
      * @param object $response A response from the authenticator
      * @return \stdClass
      * @throws U2FException
