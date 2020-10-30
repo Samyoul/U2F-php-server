@@ -19,6 +19,7 @@ class U2FServerTest extends TestCase
     {
         $foo = self::getClassMethod(U2FServer::class, 'createChallenge');
         $challengeResult = $foo->invokeArgs(new U2FServer(), []);
-        $this->assertMatchesRegularExpression('/^[a-z0-9_-]{20,}$/i', $challengeResult);
+        $this->assertNotEmpty($challengeResult);
+        $this->assertGreaterThan(20, strlen($challengeResult));
     }
 }
