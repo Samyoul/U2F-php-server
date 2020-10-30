@@ -1,7 +1,7 @@
 # U2F-php-server
 
 [![Latest Stable Version](https://img.shields.io/packagist/v/samyoul/u2f-php-server.svg?style=flat-square)](https://packagist.org/packages/samyoul/u2f-php-server)
-[![GitHub license](https://img.shields.io/github/license/Samyoul/U2F-php-server?style=flat-square)](LICENCE.md)
+[![GitHub license](https://img.shields.io/github/license/Samyoul/U2F-php-server?style=flat-square)](LICENCE)
 
 Server-side handling of FIDO U2F registration and authentication for PHP.
 
@@ -147,10 +147,10 @@ $ composer install
     1. [Step 1: Starting](#registration-step-1)
     1. [Step 2: Talking to the HID](#registration-step-2)
     1. [Step 3: Validation & Storage](#registration-step-3)
-3. [Authentication Code]()
-    1. [Step 1: Starting]()
-    1. [Step 2: Talking to the HID]()
-    1. [Step 3: Validation]()
+3. [Authentication Code](#authentication-code)
+    1. [Step 1: Starting](#authentication-step-1)
+    1. [Step 2: Talking to the HID](#authentication-step-2)
+    1. [Step 3: Validation](#authentication-step-3)
 
 ---
 
@@ -482,7 +482,7 @@ composer require u2f-codeigniter-server
 
 ## Licence
 
-The repository is licensed under a BSD license. [Read details here](https://github.com/Samyoul/U2F-php-server/blob/master/LICENCE.md)
+The repository is licensed under a BSD license. [Read details here](https://github.com/Samyoul/U2F-php-server/blob/master/LICENCE)
 
 ## Credits
 
