@@ -75,9 +75,9 @@ class U2FServer
      *
      * @param RegistrationRequest $request this is a reply to
      * @param object $response response from a user
-     * @param string $attestDir
+     * @param string|null $attestDir The folder to use where trusted CA files are stored (optional)
      * @param bool $includeCert set to true if the attestation certificate should be
-     * included in the returned Registration object
+     * included in the returned Registration object (optional)
      * @return Registration
      * @throws U2FException
      */
@@ -335,8 +335,10 @@ class U2FServer
     }
 
     /**
-     * @param string $attestDir
-     * @return array
+     * Get all files from a directory
+     *
+     * @param string $attestDir The folder to find files into
+     * @return string[]
      */
     private static function get_certs($attestDir)
     {
