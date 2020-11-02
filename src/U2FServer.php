@@ -1,10 +1,5 @@
 <?php
-/**
- * Created by IntelliJ IDEA.
- * User: samuel
- * Date: 09/12/2016
- * Time: 14:40
- */
+
 namespace Samyoul\U2F\U2FServer;
 
 class U2FServer
@@ -15,10 +10,24 @@ class U2FServer
     /** @internal */
     const PUBKEY_LEN = 65;
 
-    /** @internal */
+    /*
+     *  NOTE: If you are lucky and can match this CNs to the hashes please also add it to
+     *  the existing test case provider
+     *  "CN=Yubico U2F EE Serial 776137165",
+     *  "CN=Yubico U2F EE Serial 1086591525",
+     *  "CN=Yubico U2F EE Serial 1973679733",
+     *  "CN=Yubico U2F EE Serial 13503277888",
+     *  "CN=Yubico U2F EE Serial 14803321578"
+     */
+
+    /**
+     * @internal
+     * @see https://books.google.fr/books?id=SF68CwAAQBAJ&lpg=PT96&ots=PCLmrWyu2F&hl=fr&pg=PT96#v=onepage&q&f=false
+     * @see https://github.com/Yubico/python-u2flib-server/issues/15#issue-107916981
+     */
     private static $FIXCERTS = [
         '349bca1031f8c82c4ceca38b9cebf1a69df9fb3b94eed99eb3fb9aa3822d26e8',
-        'dd574527df608e47ae45fbba75a2afdd5c20fd94a02419381813cd55a2a3398f',
+        'dd574527df608e47ae45fbba75a2afdd5c20fd94a02419381813cd55a2a3398f', // "CN=Yubico U2F EE Serial 13831167861"
         '1d8764f0f7cd1352df6150045c8f638e517270e8b5dda1c63ade9c2280240cae',
         'd0edc9a91a1677435a953390865d208c55b3183c6759c9b5a7ff494c322558eb',
         '6073c436dcd064a48127ddbf6032ac1a66fd59a0c24434f070d4e564c124c897',
@@ -44,14 +53,14 @@ class U2FServer
      * Returns an array of one registration request and a array of sign requests.
      *
      * @param string $appId Application id for the running application, Basically the app's URL
-     * @param array $registrations List of current registrations for this
+     * @param stdClass[] $registrations List of current registrations for this
      * user, to prevent the user from registering the same authenticator several
      * times.
-     * @return array An array of two elements, the first containing a
+     * @return array<string,RegistrationRequest|SignRequest[]> An array of two elements, the first containing a
      * RegisterRequest the second being an array of SignRequest
      * @throws U2FException
      */
-    public static function makeRegistration($appId, array $registrations = array())
+    public static function makeRegistration($appId, array $registrations = [])
     {
         $request = new RegistrationRequest(static::createChallenge(), $appId);
         $signatures = static::makeAuthentication($registrations, $appId);
@@ -66,18 +75,16 @@ class U2FServer
      *
      * @param RegistrationRequest $request this is a reply to
      * @param object $response response from a user
-     * @param string $attestDir
+     * @param string|null $attestDir The folder to use where trusted CA files are stored (optional)
      * @param bool $includeCert set to true if the attestation certificate should be
-     * included in the returned Registration object
+     * included in the returned Registration object (optional)
      * @return Registration
      * @throws U2FException
      */
     public static function register(RegistrationRequest $request, $response, $attestDir = null, $includeCert = true)
     {
         // Parameter Checks
-        if( !is_object( $request ) ) {
-            throw new \InvalidArgumentException('$request of register() method only accepts object.');
-        }
+        // $request is safe because of the php typehint
 
         if( !is_object( $response ) ) {
             throw new \InvalidArgumentException('$response of register() method only accepts object.');
@@ -188,9 +195,9 @@ class U2FServer
     /**
      * Called to get an authentication request.
      *
-     * @param array $registrations An array of the registrations to create authentication requests for.
+     * @param stdClass[] $registrations An array of the registrations to create authentication requests for.
      * @param string $appId Application id for the running application, Basically the app's URL
-     * @return array An array of SignRequest
+     * @return SignRequest[] An array of SignRequest
      * @throws \InvalidArgumentException
      */
     public static function makeAuthentication(array $registrations, $appId)
@@ -214,8 +221,8 @@ class U2FServer
     /**
      * Called to verify an authentication response
      *
-     * @param array $requests An array of outstanding authentication requests
-     * @param array <Registration> $registrations An array of current registrations
+     * @param SignRequest[] $requests An array of outstanding authentication requests
+     * @param stdClass[] $registrations An array of current registrations
      * @param object $response A response from the authenticator
      * @return \stdClass
      * @throws U2FException
@@ -326,8 +333,10 @@ class U2FServer
     }
 
     /**
-     * @param string $attestDir
-     * @return array
+     * Get all files from a directory
+     *
+     * @param string $attestDir The folder to find files into
+     * @return string[]
      */
     private static function get_certs($attestDir)
     {
@@ -416,12 +425,12 @@ class U2FServer
      * Fixes a certificate where the signature contains unused bits.
      *
      * @param string $cert
-     * @return mixed
+     * @return string
      */
     private static function fixSignatureUnusedBits($cert)
     {
         if(in_array(hash('sha256', $cert), static::$FIXCERTS)) {
-            $cert[strlen($cert) - 257] = "\0";
+            $cert[strlen($cert) - 257] = "\0"; // Fix the "unused bits" field (should always be 0).
         }
         return $cert;
     }

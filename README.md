@@ -1,7 +1,7 @@
 # U2F-php-server
 
 [![Latest Stable Version](https://img.shields.io/packagist/v/samyoul/u2f-php-server.svg?style=flat-square)](https://packagist.org/packages/samyoul/u2f-php-server)
-[![License](https://img.shields.io/badge/license-BSD_2_Clause-brightgreen.svg?style=flat-square)](LICENCE.md)
+[![GitHub license](https://img.shields.io/github/license/Samyoul/U2F-php-server?style=flat-square)](LICENCE)
 
 Server-side handling of FIDO U2F registration and authentication for PHP.
 
@@ -65,7 +65,7 @@ A few **things you need** to know before working with this:
 
 ### OpenSSL
 
-This repository requires OpenSSL 1.0.0 or higher. For further details on installing OpenSSL please refer to the php manual http://php.net/manual/en/openssl.installation.php .
+This repository requires OpenSSL 1.0.0 or higher. For further details on installing OpenSSL please refer to the [php manual](https://www.php.net/manual/en/openssl.installation.php).
 
 Also see [Compatibility Code](#compatibility-code), to check if you have the correct version of OpenSSL installed, and are unsure how else to check.
 
@@ -73,7 +73,7 @@ Also see [Compatibility Code](#compatibility-code), to check if you have the cor
 
 My presumption is that if you are looking to add U2F authentication to a php system, then you'll probably are also looking for some client-side handling. You've got a U2F enabled USB device and you want to get the USB device speaking with the browser and then with your server running php.
 
-1. Google already have this bit sorted : https://github.com/google/u2f-ref-code/blob/master/u2f-gae-demo/war/js/u2f-api.js
+1. Google already have this bit sorted : [u2f-api.js](https://github.com/google/u2f-ref-code/blob/master/u2f-gae-demo/war/js/u2f-api.js)
 2. [Mastahyeti](https://github.com/mastahyeti) has created a repo dedicated to Google's JavaScript Client-side API : https://github.com/mastahyeti/u2f-api
 
 ### HTTPS and SSL
@@ -122,7 +122,7 @@ TODO the descriptions
 1. When the browser loads the page the JavaScript fires the `u2f.sign(authenticationRequest, function(data){ // Callback logic })` function
 1. The view will use JavaScript / Browser to poll the host machine's ports for a FIDO U2F device
 1. Once the HID has been found the JavaScript / Browser will send the sign request with data.
-1. The HID will prompt the user to authorise the sign request
+1. The HID will prompt the user to authorize the sign request
 1. On success the HID returns authentication data
 1. The JavaScript receives the HID's returned data and passes it to the server
 1. The application takes the returned data passes it to the `U2F::authenticate($authenticationRequest, $registrations, $authenticationResponse)` method
@@ -135,10 +135,10 @@ For a full working code example for this repository please see [the dedicated ex
 
 You can also install it with the following:
 
-```bash
+```sh
 $ git clone https://github.com/Samyoul/U2F-php-server-examples.git
 $ cd u2f-php-server-examples
-$ composer install 
+$ composer install
 ```
 
 
@@ -147,10 +147,10 @@ $ composer install
     1. [Step 1: Starting](#registration-step-1)
     1. [Step 2: Talking to the HID](#registration-step-2)
     1. [Step 3: Validation & Storage](#registration-step-3)
-3. [Authentication Code]()
-    1. [Step 1: Starting]()
-    1. [Step 2: Talking to the HID]()
-    1. [Step 3: Validation]()
+3. [Authentication Code](#authentication-code)
+    1. [Step 1: Starting](#authentication-step-1)
+    1. [Step 2: Talking to the HID](#authentication-step-2)
+    1. [Step 3: Validation](#authentication-step-3)
 
 ---
 
@@ -161,7 +161,8 @@ You'll only ever need to use this method call once per installation and only in 
 ```php
 <?php
 
-require('vendor/autoload.php');
+require __DIR__ . '/vendor/autoload.php';
+
 use Samyoul\U2F\U2FServer\U2FServer as U2F;
 
 var_dump(U2F::checkOpenSSLVersion());
@@ -179,13 +180,14 @@ We assume that user has successfully authenticated and wishes to register.
 ```php
 <?php
 
-require('vendor/autoload.php');
+require __DIR__ . '/vendor/autoload.php';
+
 use Samyoul\U2F\U2FServer\U2FServer as U2F;
 
 session_start();
 
 // This can be anything, but usually easier if you choose your applications domain and top level domain.
-$appId = "yourdomain.tld";
+$appId = 'yourdomain.tld';
 
 // Call the makeRegistration method, passing in the app ID
 $registrationData = U2F::makeRegistration($appId);
@@ -198,13 +200,16 @@ $jsRequest = json_encode($registrationData['request']);
 $jsSignatures = json_encode($registrationData['signatures']);
 
 // now pass the data to a fictitious view.
-echo View::make('template/location/u2f-registration.html', compact("jsRequest", "jsSignatures"));
+echo View::make('template/location/u2f-registration.html', [
+    'jsRequest' => $jsRequest,
+    'jsSignatures' => $jsSignatures,
+]);
 ```
 
 #### Registration Step 2:
 **Client-side, Talking To The USB**
 
-Non-AJAX client-side registration of U2F key token. AJAX can of course be used in your application, but it is easier to demonstrate a linear process without AJAX and callbacks. 
+Non-AJAX client-side registration of U2F key token. AJAX can of course be used in your application, but it is easier to demonstrate a linear process without AJAX and callbacks.
 
 ```html
 <html>
@@ -214,35 +219,35 @@ Non-AJAX client-side registration of U2F key token. AJAX can of course be used i
 <body>
     <h1>U2F Registration</h1>
     <h2>Please enter your FIDO U2F device into your computer's USB port. Then confirm registration on the device.</h2>
-    
+
     <div style="display:none;">
         <form id="u2f_submission" method="post" action="auth/u2f-registration/confirm">
             <input id="u2f_registration_response" name="registration_response" value="" />
         </form>
     </div>
-    
+
 <script type="javascript" src="https://raw.githubusercontent.com/google/u2f-ref-code/master/u2f-gae-demo/war/js/u2f-api.js"></script>
 <script>
     setTimeout(function() {
-    
+
         // A magic JS function that talks to the USB device. This function will keep polling for the USB device until it finds one.
         u2f.register([<?php echo $jsRequest ?>], <?php echo $jsSignatures ?>], function(data) {
-           
+
             // Handle returning error data
             if(data.errorCode && errorCode != 0) {
-                alert("registration failed with error: " + data.errorCode);
-                // Or handle the error however you'd like. 
-                
+                alert('registration failed with error: ' + data.errorCode);
+                // Or handle the error however you'd like.
+
                 return;
             }
-    
+
             // On success process the data from USB device to send to the server
             var registration_response = JSON.stringify(data);
-            
+
             // Get the form items so we can send data back to the server
             var form = document.getElementById('u2f_submission');
             var response = document.getElementById('u2f_registration_response');
-            
+
             // Fill and submit form.
             response.value = JSON.stringify(registration_response);
             form.submit();
@@ -270,25 +275,27 @@ session_start();
 $user = getAuthenticatedUser();
 
 try {
-    
+
     // Validate the registration response against the registration request.
     // The output are the credentials you need to store for U2F authentication.
     $validatedRegistration = U2F::register(
         $_SESSION['registrationRequest'],
         json_decode($_POST['u2f_registration_response'])
     );
-    
-    // Fictitious function representing the storing of the validated U2F registration data against the authenticated user. 
+
+    // Fictitious function representing the storing of the validated U2F registration data against the authenticated user.
     $user->storeRegistration($validatedRegistration);
-    
+
     // Then let your user know what happened
-    $userMessage = "Success";
+    $userMessage = 'Success';
 } catch( Exception $e ) {
-    $userMessage = "We had an error: ". $e->getMessage();
+    $userMessage = 'We had an error: '. $e->getMessage();
 }
 
 //Fictitious view.
-echo View::make('template/location/u2f-registration-result.html', compact('userMessage'));
+echo View::make('template/location/u2f-registration-result.html', [
+    'userMessage' => $userMessage,
+]);
 ```
 
 ---
@@ -302,7 +309,7 @@ We assume that user has successfully authenticated and has previously registered
 
 ```php
 <?php
-    
+
 require('vendor/autoload.php');
 use Samyoul\U2F\U2FServer\U2FServer as U2F;
 
@@ -315,7 +322,7 @@ $user = getAuthenticatedUser();
 $registrations = $user->U2FRegistrations();
 
 // This can be anything, but usually easier if you choose your applications domain and top level domain.
-$appId = "yourdomain.tld";
+$appId = 'yourdomain.tld';
 
 // Call the U2F makeAuthentication method, passing in the user's registration(s) and the app ID
 $authenticationRequest = U2F::makeAuthentication($registrations, $appId);
@@ -324,14 +331,15 @@ $authenticationRequest = U2F::makeAuthentication($registrations, $appId);
 $_SESSION['authenticationRequest'] = $authenticationRequest;
 
 // now pass the data to a fictitious view.
-echo View::make('template/location/u2f-authentication.html', compact("authenticationRequest"));
+echo View::make('template/location/u2f-authentication.html', [
+    'authenticationRequest' => $authenticationRequest,
+]);
 ```
 
 #### Authentication Step 2:
 **Client-side, Talking To The USB**
 
-Non-AJAX client-side authentication of U2F key token. AJAX can of course be used in your application, but it is easier to demonstrate a linear process without AJAX and callbacks. 
-
+Non-AJAX client-side authentication of U2F key token. AJAX can of course be used in your application, but it is easier to demonstrate a linear process without AJAX and callbacks.
 
 ```html
 <html>
@@ -341,7 +349,7 @@ Non-AJAX client-side authentication of U2F key token. AJAX can of course be used
 <body>
     <h1>U2F Authentication</h1>
     <h2>Please enter your FIDO U2F device into your computer's USB port. Then confirm authentication on the device.</h2>
-    
+
     <div style="display:none;">
         <form id="u2f_submission" method="post" action="auth/u2f-authentication/confirm">
             <input id="u2f_authentication_response" name="authentication_response" value="" />
@@ -351,25 +359,25 @@ Non-AJAX client-side authentication of U2F key token. AJAX can of course be used
     <script type="javascript" src="https://raw.githubusercontent.com/google/u2f-ref-code/master/u2f-gae-demo/war/js/u2f-api.js"></script>
     <script>
     setTimeout(function() {
-        
+
         // Magic JavaScript talking to your HID
         u2f.sign(<?php echo $authenticationRequest; ?>, function(data) {
-            
+
             // Handle returning error data
             if(data.errorCode && errorCode != 0) {
-                alert("Authentication failed with error: " + data.errorCode);
-                // Or handle the error however you'd like. 
-                
+                alert('Authentication failed with error: ' + data.errorCode);
+                // Or handle the error however you'd like.
+
                 return;
             }
-    
+
             // On success process the data from USB device to send to the server
             var authentication_response = JSON.stringify(data);
-            
+
             // Get the form items so we can send data back to the server
             var form = document.getElementById('u2f_submission');
             var response = document.getElementById('u2f_authentication_response');
-            
+
             // Fill and submit form.
             response.value = JSON.stringify(authentication_response);
             form.submit();
@@ -400,7 +408,7 @@ $user = authenticatedUser();
 $registrations = $user->U2FRegistrations();
 
 try {
-    
+
     // Validate the authentication response against the registration request.
     // The output are the credentials you need to store for U2F authentication.
     $validatedAuthentication = U2F::authenticate(
@@ -408,18 +416,20 @@ try {
         $registrations,
         json_decode($_POST['u2f_authentication_response'])
     );
-    
-    // Fictitious function representing the updating of the U2F token count integer. 
+
+    // Fictitious function representing the updating of the U2F token count integer.
     $user->updateU2FRegistrationCount($validatedAuthentication);
-    
+
     // Then let your user know what happened
-    $userMessage = "Success";
+    $userMessage = 'Success';
 } catch( Exception $e ) {
-    $userMessage = "We had an error: ". $e->getMessage();
+    $userMessage = 'We had an error: '. $e->getMessage();
 }
 
 //Fictitious view.
-echo View::make('template/location/u2f-authentication-result.html', compact('userMessage'));
+echo View::make('template/location/u2f-authentication-result.html', [
+    'userMessage' => $userMessage,
+]);
 ```
 
 ---
@@ -428,10 +438,10 @@ Again, if you want to just download some example code to play with just install 
 
 You can also install it with the following:
 
-```bash
+```sh
 $ git clone https://github.com/Samyoul/U2F-php-server-examples.git
 $ cd u2f-php-server-examples
-$ composer install 
+$ composer install
 ```
 
 ## Frameworks
@@ -442,7 +452,9 @@ See the dedicated repository : https://github.com/Samyoul/U2F-Laravel-server
 
 Installation:
 
-`composer require u2f-laravel-server`
+```sh
+composer require u2f-laravel-server
+```
 
 ### Yii Framework
 
@@ -450,7 +462,9 @@ See the dedicated repository : https://github.com/Samyoul/U2F-Yii-server
 
 Installation:
 
-`composer require u2f-yii-server`
+```sh
+composer require u2f-yii-server
+```
 
 ### CodeIgniter Framework
 
@@ -458,7 +472,9 @@ See the dedicated repository : https://github.com/Samyoul/U2F-CodeIgniter-server
 
 Installation:
 
-`composer require u2f-codeigniter-server`
+```sh
+composer require u2f-codeigniter-server
+```
 
 ### Can't see yours?
 
@@ -466,8 +482,8 @@ Installation:
 
 ## Licence
 
-The repository is licensed under a BSD license. [Read details here](https://github.com/Samyoul/U2F-php-server/blob/master/LICENCE.md)
+The repository is licensed under a BSD license. [Read details here](https://github.com/Samyoul/U2F-php-server/blob/master/LICENCE)
 
 ## Credits
 
-This repo was originally based on the Yubico php-u2flib-server https://github.com/Yubico/php-u2flib-server
+This repo was originally based on the [Yubico php-u2flib-server](https://github.com/Yubico/php-u2flib-server)

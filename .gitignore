@@ -1,4 +1,7 @@
 # IntelliJ project files
 .idea
+.vscode
 *.iml
+.phpunit.result.cache
 /vendor/
+/build/
