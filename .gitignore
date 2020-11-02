@@ -4,3 +4,4 @@
 *.iml
 .phpunit.result.cache
 /vendor/
+/build/
