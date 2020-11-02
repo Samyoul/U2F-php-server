@@ -56,7 +56,7 @@ class U2FServer
      * @param stdClass[] $registrations List of current registrations for this
      * user, to prevent the user from registering the same authenticator several
      * times.
-     * @return array An array of two elements, the first containing a
+     * @return array<string,RegistrationRequest|SignRequest[]> An array of two elements, the first containing a
      * RegisterRequest the second being an array of SignRequest
      * @throws U2FException
      */
