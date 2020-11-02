@@ -199,7 +199,7 @@ class U2FServer
      *
      * @param stdClass[] $registrations An array of the registrations to create authentication requests for.
      * @param string $appId Application id for the running application, Basically the app's URL
-     * @return array An array of SignRequest
+     * @return SignRequest[] An array of SignRequest
      * @throws \InvalidArgumentException
      */
     public static function makeAuthentication(array $registrations, $appId)
