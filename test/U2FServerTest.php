@@ -8,7 +8,8 @@ use Samyoul\U2F\U2FServer\U2FServer;
 
 class U2FServerTest extends TestCase
 {
-    protected static function getClassMethod(string $className, string $methodName) {
+    protected static function getClassMethod(string $className, string $methodName)
+    {
         $class = new ReflectionClass($className);
         $method = $class->getMethod($methodName);
         $method->setAccessible(true);
@@ -17,8 +18,8 @@ class U2FServerTest extends TestCase
 
     public function testCreateChallenge(): void
     {
-        $foo = self::getClassMethod(U2FServer::class, 'createChallenge');
-        $challengeResult = $foo->invokeArgs(new U2FServer(), []);
+        $u2f = self::getClassMethod(U2FServer::class, 'createChallenge');
+        $challengeResult = $u2f->invokeArgs(new U2FServer(), []);
         $this->assertNotEmpty($challengeResult);
         $this->assertGreaterThan(20, strlen($challengeResult));
     }
@@ -48,13 +49,159 @@ class U2FServerTest extends TestCase
      * @dataProvider dataProviderForFixSignatureUnusedBits
      */
     public function testFixSignatureUnusedBits(
-        string $inputSignatureBlock, string $signatureHash, string $outputSignatureBlock
+        string $inputSignatureBlock,
+        string $signatureHash,
+        string $outputSignatureBlock
     ): void {
         $signature = hex2bin($inputSignatureBlock);
         $this->assertSame($signatureHash, hash('sha256', $signature));
-        $foo = self::getClassMethod(U2FServer::class, 'fixSignatureUnusedBits');
-        $output = bin2hex($foo->invokeArgs(new U2FServer(), [$signature]));
+        $u2f = self::getClassMethod(U2FServer::class, 'fixSignatureUnusedBits');
+        $output = bin2hex($u2f->invokeArgs(new U2FServer(), [$signature]));
         $this->assertSame($output, $outputSignatureBlock);
     }
 
+    public function testBase64UEncodeDecode(): void
+    {
+        $shortBlob = 'Salut';
+        $u2f = self::getClassMethod(U2FServer::class, 'base64u_encode');
+        $encoded = $u2f->invokeArgs(new U2FServer(), [$shortBlob]);
+        $this->assertNotEmpty($encoded);
+        $this->assertSame('U2FsdXQ', $encoded);
+        $u2f = self::getClassMethod(U2FServer::class, 'base64u_decode');
+        $decoded = $u2f->invokeArgs(new U2FServer(), [$encoded]);
+        $this->assertNotEmpty($decoded);
+        $this->assertSame($shortBlob, $decoded);
+
+        $longBlob = '&àçècmm!:************************************************************';
+        $longBlob .= '^$ùzefzef:ezf:ze;fzefilqsnéà_è(_yà"tjzifzpofkzof,zlgugealuvnskqjvneruieg';
+        $u2f = self::getClassMethod(U2FServer::class, 'base64u_encode');
+        $encoded = $u2f->invokeArgs(new U2FServer(), [$longBlob]);
+        $this->assertNotEmpty($encoded);
+        $this->assertSame(
+            'JsOgw6fDqGNtbSE6KioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKio'
+                . 'qKioqKioqKioqKioqXiTDuXplZnplZjplemY6emU7ZnplZmlscXNuw6nDoF_DqChfecOgInRqemlmen'
+                . 'BvZmt6b2YsemxndWdlYWx1dm5za3Fqdm5lcnVpZWc',
+            $encoded
+        );
+        $u2f = self::getClassMethod(U2FServer::class, 'base64u_decode');
+        $decoded = $u2f->invokeArgs(new U2FServer(), [$encoded]);
+        $this->assertNotEmpty($decoded);
+        $this->assertSame($longBlob, $decoded);
+    }
+
+    /**
+     * @group openssl
+     */
+    public function testCheckOpenSSLVersion(): void
+    {
+        $u2f = self::getClassMethod(U2FServer::class, 'checkOpenSSLVersion');
+        $goodVersion = $u2f->invokeArgs(new U2FServer(), []);
+        $this->assertTrue($goodVersion);
+    }
+
+    /**
+     * @group file-system
+     */
+    public function testGet_certs(): void
+    {
+        $tempDirName = tempnam(sys_get_temp_dir(), '_testGet_certs');
+        unlink($tempDirName); // This is a file for now
+        mkdir($tempDirName); // And now a directory
+        $tmpFile = tempnam($tempDirName, 'cert_');
+        $u2f = self::getClassMethod(U2FServer::class, 'get_certs');
+        $filesList = $u2f->invokeArgs(new U2FServer(), [$tempDirName]);
+        $this->assertSame([
+            $tmpFile
+        ], $filesList);
+        unlink($tmpFile);
+        rmdir($tempDirName);
+    }
+
+    public function testPublicKeyToPem(): void
+    {
+        $u2f = self::getClassMethod(U2FServer::class, 'publicKeyToPem');
+        $pemKey = $u2f->invokeArgs(new U2FServer(), [
+            ''
+        ]);
+        $this->assertNull($pemKey);
+        $pemKeyWrongStart = $u2f->invokeArgs(new U2FServer(), [
+            'd'
+        ]);
+        $this->assertNull($pemKeyWrongStart);
+        $pemKeyWrongLength = $u2f->invokeArgs(new U2FServer(), [
+            "\x04"
+        ]);
+        $this->assertNull($pemKeyWrongLength);
+        $pemKeyWrongLength = $u2f->invokeArgs(new U2FServer(), [
+            "\x04" . str_repeat('*', 63)
+        ]);
+        $this->assertNull($pemKeyWrongLength);
+        $pemKeyOkay = $u2f->invokeArgs(new U2FServer(), [
+            // Public key for "CN=PilotGnubby-0.4.1-47901280001155957352"
+            // Value shown by KSE <https://keystore-explorer.org>
+            hex2bin('048D617E65C9508E64BCC5673AC82A6799DA3C1446682C258C463FFFDF58DFD2FA3E6C378B53D795C4A4DFFB4199EDD7862F23ABAF0203B4B8911BA0569994E101')
+        ]);
+        $this->assertSame(
+            // Value shown by KSE <https://keystore-explorer.org>
+            '-----BEGIN PUBLIC KEY-----' . "\r\n"
+                . 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEjWF+ZclQjmS8xWc6yCpnmdo8FEZo' . "\r\n"
+                . 'LCWMRj//31jf0vo+bDeLU9eVxKTf+0GZ7deGLyOrrwIDtLiRG6BWmZThAQ==' . "\r\n"
+                . '-----END PUBLIC KEY-----',
+            $pemKeyOkay
+        );
+    }
+
+    public function testMakeAuthentication(): void
+    {
+        // Source: https://github.com/Yubico/php-u2flib-server/blob/55d813acf68212ad2cadecde07551600d6971939/tests/u2flib_test.php#L200
+        // Data copyright: https://github.com/Yubico/php-u2flib-server/blob/55d813acf68212ad2cadecde07551600d6971939/tests/u2flib_test.php#L3
+        $regs = [
+            (object) [
+                'keyHandle' => 'CTUayZo8hCBeC-sGQJChC0wW-bBg99bmOlGCgw8XGq4dLsxO3yWh9mRYArZxocP5hBB1pEGB3bbJYiM-5acc5w',
+                'publicKey' => 'BC0SaFZWC9uH7wamOwduP93kUH2I2hEvyY0Srfj4A258pZSlV0iPoFIH+bd4yhncaqdoPLdEDl5Y\/yaFORPUe3c=',
+                'certificate' => 'MIIC4jCBywIBATANBgkqhkiG9w0BAQsFADAdMRswGQYDVQQDExJZdWJpY28gVTJGIFRlc3QgQ0EwHhcNMTQwNTE1'
+                    . ' MTI1ODU0WhcNMTQwNjE0MTI1ODU0WjAdMRswGQYDVQQDExJZdWJpY28gVTJGIFRlc3QgRUUwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAA'
+                    . 'TbCtv1IcdczmPcpuHoJQYNlOYnVBlPnSSvJhq+rZlEH5WjcZEKOiDnPpFeE+i+OAV61XqjfnaQj6\/'
+                    . 'iipS2MOudMA0GCSqGSIb3DQEBCwUAA4ICAQCVQGtQYX2thKO064gP4zAPLaIKANklBO5y+mffWFEPC0cCnD5BKUqTrCmFiS2keoEyKFdxAe'
+                    . '+oQogWljeR1d\/gj8k8jbDNiXCC7HnTxnhzKTLlq2y9Vp\/VRZHOwd2NZNzpnB9ePNKvUaWCGK\/gN+cynnYFdwJ75iSgMVYb\/'
+                    . 'RnFcdPwnsBzBU68hbhTnu\/FvJxWo7rZJ2q7qXpA10eLVXJr4\/4oSXEk9I\/0IIHqOP98Ck\/fAoI5gYI7ygndyqoPJ\/Wkg1VsmjmbFToWY9xb'
+                    . '+axbvPefvg+KojwxE6MySMpYh\/h7oKEKamCWk19dJp5jHQmumkHlvQhH\/uUJmyD9EuLmQH+6SmEzZg0Oc9uw1aKamhcNNDCFakJGnv80j1'
+                    . '+HbDXnqE0168FBqorS2hmqeaJfNSyg\/SXT950lGC36tLy7BzQ8jYG99Ok32znp0UVbIEEvLSci3JJ0ipLVg\/0J+xOb4zl6a1z65nae4OTj7628\/'
+                    . 'UJFmtSU0X6Np9gF1dNizxXPlH0fW1ggRCCQcb5m6ZqrdDJwUx1p7Ydm9AlPyiUwwmN5ADyxmzk\/'
+                    . 'AOCoiO96UVvnvUlk2kF7JMNxIv3R0SCzP5fTl7KqGByeA3d7W375o6DWIIEsOI+dJd7pyPXdakecZQRaVubC6\/ICl'
+                    . '+G52OEkdp8jYjkDS8j3NAdJ1udNmg==',
+                'counter' => 3
+            ]
+        ];
+
+        $auths = U2FServer::makeAuthentication(
+            $regs,
+            'http://demo.example.com'
+        );
+        $this->assertSame(
+            [
+                [
+                    'version' => 'U2F_V2',
+                    'challenge' => $auths[0]->challenge(),
+                    'keyHandle' => 'CTUayZo8hCBeC-sGQJChC0wW-bBg99bmOlGCgw8XGq4dLsxO3yWh9mRYArZxocP5hBB1pEGB3bbJYiM-5acc5w',
+                    'appId' => 'http://demo.example.com'
+                ]
+            ],
+            json_decode(json_encode($auths), true)
+        );
+    }
+
+    public function testMakeBadAuthentication(): void
+    {
+        $this->expectExceptionMessage('$registrations of makeAuthentication() method only accepts array of object.');
+        $this->expectException(\Exception::class);
+        $regs = [
+            []
+        ];
+
+        U2FServer::makeAuthentication(
+            $regs,
+            'http://demo.example.com'
+        );
+    }
 }
