@@ -84,9 +84,7 @@ class U2FServer
     public static function register(RegistrationRequest $request, $response, $attestDir = null, $includeCert = true)
     {
         // Parameter Checks
-        if( !is_object( $request ) ) {
-            throw new \InvalidArgumentException('$request of register() method only accepts object.');
-        }
+        // $request is safe because of the php typehint
 
         if( !is_object( $response ) ) {
             throw new \InvalidArgumentException('$response of register() method only accepts object.');
