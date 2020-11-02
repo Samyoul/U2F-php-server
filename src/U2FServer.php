@@ -430,7 +430,7 @@ class U2FServer
     private static function fixSignatureUnusedBits($cert)
     {
         if(in_array(hash('sha256', $cert), static::$FIXCERTS)) {
-            $cert[strlen($cert) - 257] = "\0";
+            $cert[strlen($cert) - 257] = "\0"; // Fix the "unused bits" field (should always be 0).
         }
         return $cert;
     }
